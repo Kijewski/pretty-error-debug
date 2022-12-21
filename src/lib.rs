@@ -2,6 +2,11 @@
 
 //! # pretty-error-debug
 //!
+//! [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/pretty-error-debug/ci.yml?branch=main&logo=github)](https://github.com/Kijewski/pretty-error-debug/actions/workflows/ci.yml)
+//! [![Crates.io](https://img.shields.io/crates/v/pretty-error-debug?logo=rust)](https://crates.io/crates/pretty-error-debug)
+//! ![Minimum supported Rust version: 1.30](https://img.shields.io/badge/rustc-1.30+-important?logo=rust "Minimum Supported Rust Version: 1.30")
+//! [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache)](/LICENSE-MIT "License: MIT OR Apache-2.0")
+//!
 //! Display a the chain of an error. Most useful as `Result<(), E>` for your `fn main()`,
 //! and in conjunction with [`thiserror`](https://crates.io/crates/thiserror).
 //!
@@ -12,7 +17,7 @@
 //! use std::error::Error;
 //! use std::fmt::{self, Write};
 //! #
-//! # #[derive(Debug)] struct Error1;
+//! # #[derive(Debug)] pub struct Error1;
 //! # impl Error for Error1 {}
 //! # impl fmt::Display for Error1 {
 //! #    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -20,7 +25,7 @@
 //! #    }
 //! # }
 //! #
-//! # #[derive(Debug)] struct Error2;
+//! # #[derive(Debug)] pub struct Error2;
 //! # impl Error for Error2 {}
 //! # impl fmt::Display for Error2 {
 //! #    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -57,11 +62,11 @@
 //!     }
 //! }
 //!
-//! # /*
 //! fn main() -> Result<(), MyError> {
+//! # /*
 //!     …
+//! # */ Ok(())
 //! }
-//! # */
 //! ```
 //!
 
