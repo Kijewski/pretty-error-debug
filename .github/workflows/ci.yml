@@ -1,0 +1,98 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "58 7 * * 3"
+
+jobs:
+  stable:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: nightly
+          components: clippy
+
+      - run: cargo +stable check
+      - run: cargo +stable clippy -- -D clippy::pedantic
+      - run: cargo +stable package
+
+  nightly:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: nightly
+          components: rustfmt,rust-docs
+
+      - run: cargo +nightly fmt --all -- --check
+      - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc --no-deps
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - "1.30"
+          - "1.31"
+          - "1.56"
+          - "stable"
+          - "beta"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+
+      - run: cargo +${{ matrix.toolchain }} test -- --show-output
+
+  audit:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+
+      - name: Audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  devskim:
+    runs-on: ubuntu-20.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run DevSkim scanner
+        uses: microsoft/DevSkim-Action@v1
+
+      - name: Upload DevSkim scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: devskim-results.sarif
