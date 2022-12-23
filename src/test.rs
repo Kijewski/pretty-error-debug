@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+mod pretty_error_debug {
+    pub use crate::*;
+}
+
 use std::error::Error;
 use std::fmt;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(pretty_error_debug::Debug, Clone, Copy)]
 enum RootError {
     Reasons,
 }
@@ -18,7 +22,7 @@ impl fmt::Display for RootError {
 
 impl Error for RootError {}
 
-#[derive(Clone, Copy)]
+#[derive(pretty_error_debug::Debug, Clone, Copy)]
 enum InnerError {
     Cause { root: RootError },
 }
@@ -45,13 +49,7 @@ impl From<RootError> for InnerError {
     }
 }
 
-impl fmt::Debug for InnerError {
-    fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result {
-        crate::pretty_error_debug(self, f)
-    }
-}
-
-#[derive(Clone, Copy)]
+#[derive(pretty_error_debug::Debug, Clone, Copy)]
 enum OuterError {
     Inner(InnerError),
 }
@@ -75,12 +73,6 @@ impl Error for OuterError {
 impl From<InnerError> for OuterError {
     fn from(cause: InnerError) -> Self {
         OuterError::Inner(cause)
-    }
-}
-
-impl fmt::Debug for OuterError {
-    fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result {
-        crate::pretty_error_debug(self, f)
     }
 }
 
