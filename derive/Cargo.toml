@@ -15,4 +15,4 @@ proc-macro = true
 find-crate = "0.6.3"
 quote = "1.0.7"
 syn = "1.0.33"
-toml = "0.5.2"
+toml = "0.6.0"
