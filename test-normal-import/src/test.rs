@@ -1,11 +1,7 @@
-mod pretty_error_debug {
-    pub use crate::*;
-}
-
 use std::error::Error;
 use std::fmt;
 
-#[derive(pretty_error_debug::Debug, Clone, Copy)]
+#[derive(crate::Debug, Clone, Copy)]
 enum RootError {
     Reasons,
 }
@@ -20,7 +16,7 @@ impl fmt::Display for RootError {
 
 impl Error for RootError {}
 
-#[derive(pretty_error_debug::Debug, Clone, Copy)]
+#[derive(crate::Debug, Clone, Copy)]
 enum InnerError {
     Cause { root: RootError },
 }
@@ -47,7 +43,7 @@ impl From<RootError> for InnerError {
     }
 }
 
-#[derive(pretty_error_debug::Debug, Clone, Copy)]
+#[derive(crate::Debug, Clone, Copy)]
 enum OuterError {
     Inner(InnerError),
 }
