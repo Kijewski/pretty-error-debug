@@ -4,8 +4,8 @@
 
 extern crate proc_macro;
 
-use find_crate::find_crate;
 use proc_macro::TokenStream;
+use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote_spanned;
 use syn::{parse_macro_input, DeriveInput};
 
@@ -36,23 +36,29 @@ pub fn pretty_error_debug_derive_debug(input: TokenStream) -> TokenStream {
     let ident = &input.ident;
     let span = ident.span();
 
-    let crate_name = find_crate(|p| p == "pretty-error-debug");
-    let crate_name = if let Ok(package) = crate_name {
-        let crate_name = syn::Ident::new(&package.name, span);
-        quote_spanned!(span => #crate_name)
+    let import = if let Ok(FoundCrate::Name(name)) = crate_name("pretty-error-debug") {
+        let crate_name = syn::Ident::new(&name, span);
+        quote_spanned!(
+            span =>
+            extern crate #crate_name as pretty_error_debug;
+        )
     } else {
-        quote_spanned!(span => pretty_error_debug)
+        quote_spanned!(span =>)
     };
 
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     TokenStream::from(quote_spanned! {
         span =>
-        #[allow(unused_qualifications)]
-        impl #impl_generics ::std::fmt::Debug for #ident #ty_generics #where_clause {
-            #[inline]
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                #crate_name::pretty_error_debug(self, f)
+        const _: () = {
+            #[automatically_derived]
+            #[allow(unused_qualifications)]
+            impl #impl_generics ::core::fmt::Debug for #ident #ty_generics #where_clause {
+                #[inline]
+                fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                    #import
+                    pretty_error_debug::pretty_error_debug(self, f)
+                }
             }
-        }
+        };
     })
 }

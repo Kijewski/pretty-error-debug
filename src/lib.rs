@@ -4,18 +4,29 @@
 //!
 //! [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/pretty-error-debug/ci.yml?branch=main&logo=github)](https://github.com/Kijewski/pretty-error-debug/actions/workflows/ci.yml)
 //! [![Crates.io](https://img.shields.io/crates/v/pretty-error-debug?logo=rust)](https://crates.io/crates/pretty-error-debug)
-//! ![Minimum supported Rust version: 1.31](https://img.shields.io/badge/rustc-1.31+-important?logo=rust "Minimum Supported Rust Version: 1.31")
+//! ![Minimum supported Rust version: 1.60](https://img.shields.io/badge/rustc-1.60+-important?logo=rust "Minimum Supported Rust Version: 1.60")
 //! [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache)](/LICENSE-MIT "License: MIT OR Apache-2.0")
 //!
-//! Display a the chain of an error. Most useful as `Result<(), E>` for your `fn main()`,
+//! Display a the chain of an error. Most useful as [`Result<(), E>`](std::result::Result) for your `fn main()`,
 //! and in conjunction with [`thiserror`](https://crates.io/crates/thiserror).
 //!
 //! This crate simply <del>plagiarized</del> <ins>extracted</ins> all the relevant formatting code from
 //! [`anyhow`](https://crates.io/crates/anyhow).
 //!
+//! ## Example message
+//!
+//! ```text
+//! Error: Got a 'middle' error
+//!
+//! Caused by:
+//!     1: A nested error occured
+//!     2: 'inner' failed
+//!     3: Caught an error: Not implemented, yet.
+//! ```
+//!
 //! ## With `thiserror`
 //!
-//! ```ignore
+//! ```rust,ignore
 //! #[derive(pretty_error_debug::Debug, thiserror::Error)]
 //! pub enum MyError {
 //!     #[error("Error variant 1 happened")]
@@ -26,14 +37,32 @@
 //!
 //! fn main() -> Result<(), MyError> {
 //! # /*
-//!     …
+//!     ...
+//! # */ Ok(())
+//! }
+//! ```
+//!
+//! ## With `thiserror`, but without a new type
+//!
+//! ```rust,ignore
+//! #[derive(Debug, thiserror::Error)]
+//! pub enum MyError {
+//!     #[error("Error variant 1 happened")]
+//!     Variant1(#[from] Error1),
+//!     #[error("Error variant 2 happened")]
+//!     Variant2(#[from] Error2),
+//! }
+//!
+//! fn main() -> Result<(), pretty_error_debug::Wrapper<MyError>> {
+//! # /*
+//!     ...
 //! # */ Ok(())
 //! }
 //! ```
 //!
 //! ## Without `thiserror`
 //!
-//! ```
+//! ```rust
 //! use std::error::Error;
 //! use std::fmt::{self, Write};
 //! #
@@ -79,24 +108,97 @@
 //!
 //! fn main() -> Result<(), MyError> {
 //! # /*
-//!     …
+//!     ...
 //! # */ Ok(())
 //! }
 //! ```
 //!
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![forbid(unsafe_code)]
+#![warn(absolute_paths_not_starting_with_crate)]
+#![warn(elided_lifetimes_in_paths)]
+#![warn(meta_variable_misuse)]
+#![warn(missing_copy_implementations)]
+#![warn(missing_debug_implementations)]
+#![warn(missing_docs)]
+#![warn(non_ascii_idents)]
+#![warn(unused_extern_crates)]
+#![warn(unused_lifetimes)]
+#![warn(unused_results)]
+
 #[cfg(test)]
 mod test;
-
-#[cfg(feature = "derive")]
-extern crate pretty_error_debug_derive;
 
 use std::error::Error;
 use std::fmt;
 use std::fmt::Write;
 
 #[cfg(feature = "derive")]
+#[cfg_attr(docsrs, doc(inline, cfg(feature = "derive")))]
 pub use pretty_error_debug_derive::PrettyDebug as Debug;
+
+/// Instead of adding a new type, you can simply use this wrapper
+///
+/// ## Example
+///
+/// ```rust
+/// use some_external_mod::{SomeError, some_test};
+///
+/// fn main() -> Result<(), pretty_error_debug::Wrapper<SomeError>> {
+///     some_test()?;
+///     Ok(())
+/// }
+///
+/// mod some_external_mod {
+///     #[derive(Debug)]
+///     pub struct SomeError;
+///
+///     impl std::error::Error for SomeError {}
+///
+///     impl std::fmt::Display for SomeError {
+///         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+///             f.write_str("Something went wrong")
+///         }
+///     }
+///
+///     pub fn some_test() -> Result<(), SomeError> {
+/// # /*
+///         Err(SomeError)
+/// # */ Ok(())
+///     }
+/// }
+/// ```
+#[derive(Clone, Copy, Default)]
+pub struct Wrapper<E: Error + 'static>(E);
+
+impl<E: Error + 'static> From<E> for Wrapper<E> {
+    #[inline]
+    fn from(value: E) -> Self {
+        Wrapper(value)
+    }
+}
+
+impl<E: Error + 'static> Error for Wrapper<E> {
+    #[inline]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(&self.0)
+    }
+}
+
+impl<E: Error + 'static> fmt::Display for Wrapper<E> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl<E: Error + 'static> fmt::Debug for Wrapper<E> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        pretty_error_debug(&self.0, f)
+    }
+}
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 // All further code was extracted from:

@@ -46,8 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - "1.31"
-          - "1.56"
+          - "1.60"
           - "stable"
           - "beta"
 
@@ -60,7 +59,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
 
-      - run: cargo +${{ matrix.toolchain }} test
+      - run: cargo +${{ matrix.toolchain }} test --workspace -- --nocapture --color=never
 
   audit:
     runs-on: ubuntu-20.04
