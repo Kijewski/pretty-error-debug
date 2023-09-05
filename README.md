@@ -2,7 +2,7 @@
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/pretty-error-debug/ci.yml?branch=main&logo=github)](https://github.com/Kijewski/pretty-error-debug/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/pretty-error-debug?logo=rust)](https://crates.io/crates/pretty-error-debug)
-![Minimum supported Rust version: 1.56](https://img.shields.io/badge/rustc-1.60+-important?logo=rust "Minimum Supported Rust Version: 1.56")
+![Minimum supported Rust version: 1.56](https://img.shields.io/badge/rustc-1.56+-important?logo=rust "Minimum Supported Rust Version: 1.56")
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache)](/LICENSE-MIT "License: MIT OR Apache-2.0")
 
 Display a the chain of an error. Most useful as `Result<(), E>` for your `fn main()`,
