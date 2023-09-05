@@ -4,7 +4,7 @@
 //!
 //! [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/pretty-error-debug/ci.yml?branch=main&logo=github)](https://github.com/Kijewski/pretty-error-debug/actions/workflows/ci.yml)
 //! [![Crates.io](https://img.shields.io/crates/v/pretty-error-debug?logo=rust)](https://crates.io/crates/pretty-error-debug)
-//! ![Minimum supported Rust version: 1.60](https://img.shields.io/badge/rustc-1.60+-important?logo=rust "Minimum Supported Rust Version: 1.60")
+//! ![Minimum supported Rust version: 1.56](https://img.shields.io/badge/rustc-1.60+-important?logo=rust "Minimum Supported Rust Version: 1.56")
 //! [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache)](/LICENSE-MIT "License: MIT OR Apache-2.0")
 //!
 //! Display a the chain of an error. Most useful as [`Result<(), E>`](std::result::Result) for your `fn main()`,
@@ -98,7 +98,7 @@
 //! }
 //!
 //! impl Error for MyError {
-//!     fn source(&self) -> Option<&(dyn Error + 'static)> {
+//!     fn source(&self) -> Option<&(dyn 'static + Error)> {
 //!         match self {
 //!             MyError::Variant1(source) => Some(source),
 //!             MyError::Variant2(source) => Some(source),
@@ -127,18 +127,23 @@
 #![warn(unused_lifetimes)]
 #![warn(unused_results)]
 
+mod implementation;
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "derive")]
+#[doc(hidden)]
+pub use core;
 use std::error::Error;
 use std::fmt;
-use std::fmt::Write;
 
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(inline, cfg(feature = "derive")))]
 pub use pretty_error_debug_derive::PrettyDebug as Debug;
 
-/// Instead of adding a new type, you can simply use this wrapper
+pub use self::implementation::pretty_error_debug;
+
+/// Wrap an [`Error`] to display its error chain in debug messages ([`format!("{:?}")`][fmt::Debug]).
 ///
 /// ## Example
 ///
@@ -169,132 +174,73 @@ pub use pretty_error_debug_derive::PrettyDebug as Debug;
 ///     }
 /// }
 /// ```
-#[derive(Clone, Copy, Default)]
-pub struct Wrapper<E: Error + 'static>(E);
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Wrapper<E: 'static + Error>(pub E);
 
-impl<E: Error + 'static> From<E> for Wrapper<E> {
+impl<E: 'static + Error> Wrapper<E> {
+    /// Return the wrapped argument.
     #[inline]
-    fn from(value: E) -> Self {
-        Wrapper(value)
+    pub fn new(err: E) -> Self {
+        Self(err)
     }
 }
 
-impl<E: Error + 'static> Error for Wrapper<E> {
+impl<E: 'static + Error> From<E> for Wrapper<E> {
     #[inline]
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
+    fn from(value: E) -> Self {
+        Self(value)
+    }
+}
+
+impl<E: 'static + Error> Error for Wrapper<E> {
+    #[inline]
+    fn source(&self) -> Option<&(dyn 'static + Error)> {
         Some(&self.0)
     }
 }
 
-impl<E: Error + 'static> fmt::Display for Wrapper<E> {
+impl<E: 'static + Error> fmt::Display for Wrapper<E> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }
 }
 
-impl<E: Error + 'static> fmt::Debug for Wrapper<E> {
+impl<E: 'static + Error> fmt::Debug for Wrapper<E> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         pretty_error_debug(&self.0, f)
     }
 }
 
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-// All further code was extracted from:
-//  * https://github.com/dtolnay/anyhow/blob/0ba6408b5ef508c3dfc95797d21cfbdca9dd64ee/src/fmt.rs
-//  * https://github.com/dtolnay/anyhow/blob/fa9bcc0457a2e51593b874cc2f8bcb5608ad43fe/src/chain.rs
-//
-// Author: David Tolnay <dtolnay@gmail.com> and contributors to the `anyhow` project.
-// ////////////////////////////////////////////////////////////////////////////////////////////////
+/// Wrap a reference to an [`Error`] to display its error chain with [`format!("{}")`][fmt::Display].
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Display<'a, E: ?Sized + Error>(pub &'a E);
 
-/// Write out the [`Error`] message and chain.
-///
-/// Please see the [`crate`] documentation for a more complete example.
-///
-/// ```rust
-/// use std::fmt::{self, Write};
-///
-/// pub enum MyError {
-///     Variant1(/* … */),
-///     Variant2(/* … */),
-///     // …
-/// }
-///
-/// impl fmt::Debug for MyError {
-///     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-/// #       /*
-///         pretty_error_debug::pretty_error_debug(self, f)
-/// #       */ Ok(())
-///     }
-/// }
-///
-/// // TODO: implement `std::fmt::Display` and `std::error::Error`.
-/// ```
-///
-/// # Errors
-///
-/// Fails if writing to the `f` argument failed.
-///
-#[cold]
-pub fn pretty_error_debug(error: &dyn Error, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{}", error)?;
-    if let Some(cause) = error.source() {
-        write!(f, "\n\nCaused by:")?;
-        let multiple = cause.source().is_some();
-        for (n, error) in Chain(Some(cause)).enumerate() {
-            writeln!(f)?;
-            let mut indented = Indented {
-                inner: f,
-                number: if multiple { Some(n + 1) } else { None },
-                started: false,
-            };
-            write!(indented, "{}", error)?;
-        }
-    }
-    Ok(())
-}
-
-struct Chain<'a>(Option<&'a dyn Error>);
-
-impl<'a> Iterator for Chain<'a> {
-    type Item = &'a dyn Error;
-
+impl<'a, E: ?Sized + Error> Display<'a, E> {
+    /// Return the wrapped reference.
     #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let error = self.0?;
-        self.0 = error.source();
-        Some(error)
+    pub fn new(err: &'a E) -> Self {
+        Self(err)
     }
 }
 
-struct Indented<'a, 'b: 'a> {
-    inner: &'a mut fmt::Formatter<'b>,
-    number: Option<usize>,
-    started: bool,
+impl<'a, E: Error> From<&'a E> for Display<'a, E> {
+    #[inline]
+    fn from(value: &'a E) -> Self {
+        Self(value)
+    }
 }
 
-impl<'a, 'b: 'a> fmt::Write for Indented<'a, 'b> {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        for (i, line) in s.split('\n').enumerate() {
-            if !self.started {
-                self.started = true;
-                match self.number {
-                    Some(number) => write!(self.inner, "{: >5}: ", number)?,
-                    None => self.inner.write_str("    ")?,
-                }
-            } else if i > 0 {
-                self.inner.write_char('\n')?;
-                if self.number.is_some() {
-                    self.inner.write_str("       ")?;
-                } else {
-                    self.inner.write_str("    ")?;
-                }
-            }
+impl<E: ?Sized + Error> fmt::Debug for Display<'_, E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Display").field(&self.0).finish()
+    }
+}
 
-            self.inner.write_str(line)?;
-        }
-
-        Ok(())
+impl<E: ?Sized + Error> fmt::Display for Display<'_, E> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        pretty_error_debug(&self.0, f)
     }
 }

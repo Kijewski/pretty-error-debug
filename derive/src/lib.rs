@@ -36,14 +36,11 @@ pub fn pretty_error_debug_derive_debug(input: TokenStream) -> TokenStream {
     let ident = &input.ident;
     let span = ident.span();
 
-    let import = if let Ok(FoundCrate::Name(name)) = crate_name("pretty-error-debug") {
+    let crate_name = if let Ok(FoundCrate::Name(name)) = crate_name("pretty-error-debug") {
         let crate_name = syn::Ident::new(&name, span);
-        quote_spanned!(
-            span =>
-            extern crate #crate_name as pretty_error_debug;
-        )
+        quote_spanned!(span => #crate_name)
     } else {
-        quote_spanned!(span =>)
+        quote_spanned!(span => pretty_error_debug)
     };
 
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
@@ -52,11 +49,14 @@ pub fn pretty_error_debug_derive_debug(input: TokenStream) -> TokenStream {
         const _: () = {
             #[automatically_derived]
             #[allow(unused_qualifications)]
-            impl #impl_generics ::core::fmt::Debug for #ident #ty_generics #where_clause {
+            impl #impl_generics #crate_name::core::fmt::Debug for #ident #ty_generics #where_clause
+            {
                 #[inline]
-                fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                    #import
-                    pretty_error_debug::pretty_error_debug(self, f)
+                fn fmt(
+                    &self,
+                    f: &mut #crate_name::core::fmt::Formatter<'_>,
+                ) -> #crate_name::core::fmt::Result {
+                    #crate_name::pretty_error_debug(self, f)
                 }
             }
         };

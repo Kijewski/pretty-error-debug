@@ -5,7 +5,9 @@ mod pretty_error_debug {
 use std::error::Error;
 use std::fmt;
 
-#[derive(pretty_error_debug::Debug, Clone, Copy)]
+use crate::{Display, Wrapper};
+
+#[derive(Debug, Clone, Copy)]
 enum RootError {
     Reasons,
 }
@@ -20,7 +22,7 @@ impl fmt::Display for RootError {
 
 impl Error for RootError {}
 
-#[derive(pretty_error_debug::Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum InnerError {
     Cause { root: RootError },
 }
@@ -74,6 +76,33 @@ impl From<InnerError> for OuterError {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum SimpleOuterError {
+    Inner(InnerError),
+}
+
+impl fmt::Display for SimpleOuterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SimpleOuterError::Inner(_) => write!(f, "Got an InnerError"),
+        }
+    }
+}
+
+impl Error for SimpleOuterError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            SimpleOuterError::Inner(cause) => Some(cause),
+        }
+    }
+}
+
+impl From<InnerError> for SimpleOuterError {
+    fn from(cause: InnerError) -> Self {
+        SimpleOuterError::Inner(cause)
+    }
+}
+
 fn root() -> Result<(), RootError> {
     Err(RootError::Reasons)
 }
@@ -86,9 +115,11 @@ fn outer() -> Result<(), OuterError> {
     inner().map_err(OuterError::from)
 }
 
-#[test]
-fn test() {
-    const EXPECTED: &str = "\
+fn simple_outer() -> Result<(), SimpleOuterError> {
+    inner().map_err(SimpleOuterError::Inner)
+}
+
+const EXPECTED: &str = "\
 Got an InnerError
 
 Caused by:
@@ -96,6 +127,20 @@ Caused by:
     2: Reasons\
 ";
 
+#[test]
+fn test_derive() {
     let outcome = format!("{:?}", outer().unwrap_err());
+    assert_eq!(EXPECTED, &outcome);
+}
+
+#[test]
+fn test_wrapper() {
+    let outcome = format!("{:?}", Wrapper::from(simple_outer().unwrap_err()));
+    assert_eq!(EXPECTED, &outcome);
+}
+
+#[test]
+fn test_display() {
+    let outcome = format!("{}", Display(&simple_outer().unwrap_err()));
     assert_eq!(EXPECTED, &outcome);
 }
