@@ -12,6 +12,6 @@ description = "Derive `std::fmt::Debug` using `pretty_error_debug`"
 proc-macro = true
 
 [dependencies]
-proc-macro-crate = "1"
+proc-macro-crate = "2"
 quote = "1.0.7"
 syn = "2.0.0"
