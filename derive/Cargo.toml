@@ -1,6 +1,6 @@
 [package]
 name = "pretty-error-debug-derive"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["René Kijewski <crates.io@k6i.de>"]
 repository = "https://github.com/Kijewski/pretty-error-debug"
 license = "MIT OR Apache-2.0 WITH LLVM-exception"
@@ -12,6 +12,5 @@ description = "Derive `std::fmt::Debug` using `pretty_error_debug`"
 proc-macro = true
 
 [dependencies]
-proc-macro-crate = "1"
 quote = "1.0.7"
 syn = "2.0.0"
