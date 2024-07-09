@@ -1,9 +1,0 @@
-[package]
-name = "test-renamed-import"
-version = "0.0.0"
-license = "MIT OR Apache-2.0"
-edition = "2021"
-publish = false
-
-[dependencies]
-test_subject = { version = "*", path = "..", package = "pretty-error-debug" }

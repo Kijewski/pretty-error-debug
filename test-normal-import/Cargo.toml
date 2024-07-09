@@ -1,9 +1,0 @@
-[package]
-name = "test-normal-import"
-version = "0.0.0"
-license = "MIT OR Apache-2.0"
-edition = "2021"
-publish = false
-
-[dependencies]
-pretty-error-debug = { version = "*", path = ".." }
