@@ -108,6 +108,6 @@ jobs:
         uses: ./.github/actions/setup-rust
 
       - name: Install "cargo-hack"
-        run: curl --location --silent --show-error --fail https://github.com/cargo-bins/cargo-quickinstall/releases/download/cargo-hack-0.5.28-x86_64-unknown-linux-gnu/cargo-hack-0.5.28-x86_64-unknown-linux-gnu.tar.gz | tar -xzvvf - -C $HOME/.cargo/bin
+        run: curl --location --silent --show-error --fail https://github.com/cargo-bins/cargo-quickinstall/releases/download/cargo-hack-0.6.28/cargo-hack-0.6.28-x86_64-unknown-linux-gnu.tar.gz | tar -xzvvf - -C $HOME/.cargo/bin
 
-      - run: cargo hack check --version-range 1.56..
+      - run: cargo hack check --version-range 1.56.. --version-step 5 --clean-per-version
