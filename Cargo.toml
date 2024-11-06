@@ -12,7 +12,7 @@ description = "Write out the `Error` message and chain."
 pretty-error-debug-derive = { version = "0.3.0", optional = true, path = "derive" }
 
 [dev-dependencies]
-thiserror = "1.0.40"
+thiserror = "2.0.0"
 
 [features]
 default = ["derive"]
