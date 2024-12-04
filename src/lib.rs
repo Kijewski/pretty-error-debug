@@ -2,10 +2,10 @@
 
 //! # pretty-error-debug
 //!
-//! [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/pretty-error-debug/ci.yml?branch=main&logo=github)](https://github.com/Kijewski/pretty-error-debug/actions/workflows/ci.yml)
-//! [![Crates.io](https://img.shields.io/crates/v/pretty-error-debug?logo=rust)](https://crates.io/crates/pretty-error-debug)
-//! ![Minimum supported Rust version: 1.56](https://img.shields.io/badge/rustc-1.60+-important?logo=rust "Minimum Supported Rust Version: 1.56")
-//! [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache)](/LICENSE-MIT "License: MIT OR Apache-2.0")
+//! [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/pretty-error-debug/ci.yml?branch=main&logo=github&style=flat-square)](https://github.com/Kijewski/pretty-error-debug/actions/workflows/ci.yml)
+//! [![Crates.io](https://img.shields.io/crates/v/pretty-error-debug?logo=rust&style=flat-square)](https://crates.io/crates/pretty-error-debug)
+//! ![Minimum supported Rust version: 1.56](https://img.shields.io/badge/rustc-1.56+-important?logo=rust&style=flat-square "Minimum Supported Rust Version: 1.56")
+//! [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache&style=flat-square)](/LICENSE-MIT "License: MIT OR Apache-2.0")
 //!
 //! Display a the chain of an error. Most useful as [`Result<(), E>`](std::result::Result) for your `fn main()`,
 //! and in conjunction with [`thiserror`](https://crates.io/crates/thiserror).
@@ -114,18 +114,13 @@
 //! ```
 //!
 
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![forbid(unsafe_code)]
-#![warn(absolute_paths_not_starting_with_crate)]
-#![warn(elided_lifetimes_in_paths)]
-#![warn(meta_variable_misuse)]
-#![warn(missing_copy_implementations)]
-#![warn(missing_debug_implementations)]
-#![warn(missing_docs)]
-#![warn(non_ascii_idents)]
-#![warn(unused_extern_crates)]
-#![warn(unused_lifetimes)]
-#![warn(unused_results)]
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
+#[rustversion::before(1.81.0)]
+extern crate std;
+#[rustversion::since(1.81.0)]
+use core as std;
 
 mod implementation;
 #[cfg(test)]
@@ -134,11 +129,10 @@ mod test;
 #[cfg(feature = "derive")]
 #[doc(hidden)]
 pub use core;
+use core::fmt;
 use std::error::Error;
-use std::fmt;
 
 #[cfg(feature = "derive")]
-#[cfg_attr(docsrs, doc(inline, cfg(feature = "derive")))]
 pub use pretty_error_debug_derive::PrettyDebug as Debug;
 
 pub use self::implementation::pretty_error_debug;
@@ -175,11 +169,20 @@ pub use self::implementation::pretty_error_debug;
 /// }
 /// ```
 #[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct Wrapper<E: 'static + Error>(pub E);
 
 impl<E: 'static + Error> Wrapper<E> {
     /// Return the wrapped argument.
     #[inline]
+    #[rustversion::since(1.61.0)]
+    pub const fn new(err: E) -> Self {
+        Self(err)
+    }
+
+    /// Return the wrapped argument.
+    #[inline]
+    #[rustversion::before(1.61.0)]
     pub fn new(err: E) -> Self {
         Self(err)
     }
@@ -215,11 +218,20 @@ impl<E: 'static + Error> fmt::Debug for Wrapper<E> {
 
 /// Wrap a reference to an [`Error`] to display its error chain with [`format!("{}")`][fmt::Display].
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct Display<'a, E: ?Sized + Error>(pub &'a E);
 
 impl<'a, E: ?Sized + Error> Display<'a, E> {
     /// Return the wrapped reference.
     #[inline]
+    #[rustversion::since(1.61.0)]
+    pub const fn new(err: &'a E) -> Self {
+        Self(err)
+    }
+
+    /// Return the wrapped reference.
+    #[inline]
+    #[rustversion::before(1.61.0)]
     pub fn new(err: &'a E) -> Self {
         Self(err)
     }
