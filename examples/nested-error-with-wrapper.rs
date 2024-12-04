@@ -1,13 +1,13 @@
-/// This example will print the following error message:
-///
-/// ```text
-/// Error: Got a 'middle' error
-///
-/// Caused by:
-///     1: A nested error occured
-///     2: 'inner' failed
-///     3: Caught an error: Not implemented, yet.
-/// ```
+//! This example will print the following error message:
+//!
+//! ```text
+//! Error: Got a 'middle' error
+//!
+//! Caused by:
+//!     1: A nested error occured
+//!     2: 'inner' failed
+//!     3: Caught an error: Not implemented, yet.
+//! ```
 
 fn main() -> Result<(), pretty_error_debug::Wrapper<Outer>> {
     outer()?;

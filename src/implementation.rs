@@ -6,8 +6,9 @@
 // Author: David Tolnay <dtolnay@gmail.com> and contributors to the `anyhow` project.
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::error::Error;
-use std::fmt::{self, Write};
+use core::fmt::{self, Write};
+
+use crate::Error;
 
 /// Write out the [`Error`] message and chain.
 ///
@@ -38,12 +39,12 @@ use std::fmt::{self, Write};
 /// Fails if writing to the `f` argument failed.
 ///
 pub fn pretty_error_debug(error: &dyn Error, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{}", error)?;
+    fmt::Display::fmt(error, f)?;
     if let Some(cause) = error.source() {
-        write!(f, "\n\nCaused by:")?;
+        f.write_str("\n\nCaused by:")?;
         let multiple = cause.source().is_some();
         for (n, error) in Chain(Some(cause)).enumerate() {
-            writeln!(f)?;
+            f.write_char('\n')?;
             let mut indented = Indented {
                 inner: f,
                 number: if multiple { Some(n + 1) } else { None },
@@ -68,13 +69,13 @@ impl<'a> Iterator for Chain<'a> {
     }
 }
 
-struct Indented<'a, 'b: 'a> {
+struct Indented<'a, 'b> {
     inner: &'a mut fmt::Formatter<'b>,
     number: Option<usize>,
     started: bool,
 }
 
-impl<'a, 'b: 'a> fmt::Write for Indented<'a, 'b> {
+impl fmt::Write for Indented<'_, '_> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for (i, line) in s.split('\n').enumerate() {
             if !self.started {

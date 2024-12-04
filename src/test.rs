@@ -1,11 +1,12 @@
+extern crate alloc;
+
 mod pretty_error_debug {
-    pub use crate::*;
+    pub(super) use crate::*;
 }
 
-use std::error::Error;
-use std::fmt;
+use core::fmt;
 
-use crate::{Display, Wrapper};
+use crate::{Display, Error, Wrapper};
 
 #[derive(Debug, Clone, Copy)]
 enum RootError {
@@ -129,18 +130,18 @@ Caused by:
 
 #[test]
 fn test_derive() {
-    let outcome = format!("{:?}", outer().unwrap_err());
+    let outcome = alloc::format!("{:?}", outer().unwrap_err());
     assert_eq!(EXPECTED, &outcome);
 }
 
 #[test]
 fn test_wrapper() {
-    let outcome = format!("{:?}", Wrapper::from(simple_outer().unwrap_err()));
+    let outcome = alloc::format!("{:?}", Wrapper::from(simple_outer().unwrap_err()));
     assert_eq!(EXPECTED, &outcome);
 }
 
 #[test]
 fn test_display() {
-    let outcome = format!("{}", Display(&simple_outer().unwrap_err()));
+    let outcome = alloc::format!("{}", Display(&simple_outer().unwrap_err()));
     assert_eq!(EXPECTED, &outcome);
 }
