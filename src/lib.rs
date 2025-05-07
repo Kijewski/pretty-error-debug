@@ -170,46 +170,41 @@ pub use self::implementation::pretty_error_debug;
 /// ```
 #[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct Wrapper<E: 'static + Error>(pub E);
+pub struct Wrapper<E: Error + ?Sized + 'static>(pub E);
 
-impl<E: 'static + Error> Wrapper<E> {
+impl<E: Error + ?Sized + 'static> Wrapper<E> {
     /// Return the wrapped argument.
     #[inline]
-    #[rustversion::since(1.61.0)]
-    pub const fn new(err: E) -> Self {
-        Self(err)
-    }
-
-    /// Return the wrapped argument.
-    #[inline]
-    #[rustversion::before(1.61.0)]
-    pub fn new(err: E) -> Self {
+    pub const fn new(err: E) -> Self
+    where
+        E: Sized,
+    {
         Self(err)
     }
 }
 
-impl<E: 'static + Error> From<E> for Wrapper<E> {
+impl<E: Error + 'static> From<E> for Wrapper<E> {
     #[inline]
     fn from(value: E) -> Self {
         Self(value)
     }
 }
 
-impl<E: 'static + Error> Error for Wrapper<E> {
+impl<E: Error + 'static> Error for Wrapper<E> {
     #[inline]
-    fn source(&self) -> Option<&(dyn 'static + Error)> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.0)
     }
 }
 
-impl<E: 'static + Error> fmt::Display for Wrapper<E> {
+impl<E: Error + 'static> fmt::Display for Wrapper<E> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }
 }
 
-impl<E: 'static + Error> fmt::Debug for Wrapper<E> {
+impl<E: Error + 'static> fmt::Debug for Wrapper<E> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         pretty_error_debug(&self.0, f)
@@ -219,20 +214,12 @@ impl<E: 'static + Error> fmt::Debug for Wrapper<E> {
 /// Wrap a reference to an [`Error`] to display its error chain with [`format!("{}")`][fmt::Display].
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct Display<'a, E: ?Sized + Error>(pub &'a E);
+pub struct Display<'a, E: Error + ?Sized>(pub &'a E);
 
-impl<'a, E: ?Sized + Error> Display<'a, E> {
+impl<'a, E: Error + ?Sized> Display<'a, E> {
     /// Return the wrapped reference.
     #[inline]
-    #[rustversion::since(1.61.0)]
     pub const fn new(err: &'a E) -> Self {
-        Self(err)
-    }
-
-    /// Return the wrapped reference.
-    #[inline]
-    #[rustversion::before(1.61.0)]
-    pub fn new(err: &'a E) -> Self {
         Self(err)
     }
 }
@@ -244,13 +231,13 @@ impl<'a, E: Error> From<&'a E> for Display<'a, E> {
     }
 }
 
-impl<E: ?Sized + Error> fmt::Debug for Display<'_, E> {
+impl<E: Error + ?Sized> fmt::Debug for Display<'_, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Display").field(&self.0).finish()
     }
 }
 
-impl<E: ?Sized + Error> fmt::Display for Display<'_, E> {
+impl<E: Error + ?Sized> fmt::Display for Display<'_, E> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         pretty_error_debug(&self.0, f)

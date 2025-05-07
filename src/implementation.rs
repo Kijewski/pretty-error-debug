@@ -50,7 +50,7 @@ pub fn pretty_error_debug(error: &dyn Error, f: &mut fmt::Formatter<'_>) -> fmt:
                 number: if multiple { Some(n + 1) } else { None },
                 started: false,
             };
-            write!(indented, "{}", error)?;
+            write!(indented, "{error}")?;
         }
     }
     Ok(())
@@ -81,7 +81,7 @@ impl fmt::Write for Indented<'_, '_> {
             if !self.started {
                 self.started = true;
                 match self.number {
-                    Some(number) => write!(self.inner, "{: >5}: ", number)?,
+                    Some(number) => write!(self.inner, "{number: >5}: ")?,
                     None => self.inner.write_str("    ")?,
                 }
             } else if i > 0 {
