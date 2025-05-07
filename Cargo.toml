@@ -1,11 +1,11 @@
 [package]
 name = "pretty-error-debug"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["René Kijewski <crates.io@k6i.de>"]
 repository = "https://github.com/Kijewski/pretty-error-debug"
 license = "MIT OR Apache-2.0"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.61"
 description = "If the process ends with an `Error`, write out the `Error` message and chain."
 categories = ["rust-patterns", "no-std", "command-line-interface"]
 keywords = ["error", "error-handling", "cli", "no-std"]
@@ -15,7 +15,7 @@ pretty-error-debug-derive = { version = "0.3.1", optional = true, path = "derive
 rustversion = "1.0.0"
 
 [dev-dependencies]
-thiserror = "1.0.40"
+thiserror = "2.0.12"
 
 [features]
 default = ["derive"]
@@ -62,4 +62,4 @@ redundant_pattern = "warn"
 redundant_pattern_matching = "warn"
 single_match = "warn"
 single_match_else = "warn"
-unwrap_used = "warn"
+# unwrap_used = "warn"

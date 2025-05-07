@@ -5,7 +5,7 @@ authors = ["René Kijewski <crates.io@k6i.de>"]
 repository = "https://github.com/Kijewski/pretty-error-debug"
 license = "MIT OR Apache-2.0 WITH LLVM-exception"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.61"
 description = "Derive `std::fmt::Debug` using `pretty_error_debug`"
 
 [lib]
