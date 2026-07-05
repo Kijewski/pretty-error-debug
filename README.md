@@ -5,7 +5,7 @@
 ![Minimum supported Rust version: 1.56](https://img.shields.io/badge/rustc-1.56+-important?logo=rust&style=flat-square "Minimum Supported Rust Version: 1.56")
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-informational?logo=apache&style=flat-square)](/LICENSE-MIT "License: MIT OR Apache-2.0")
 
-Display a the chain of an error. Most useful as `Result<(), E>` for your `fn main()`,
+Display the chain of an error. Most useful as `Result<(), E>` for your `fn main()`,
 and in conjunction with [`thiserror`](https://crates.io/crates/thiserror).
 
 This crate simply <del>plagiarized</del> <ins>extracted</ins> all the relevant formatting code from
@@ -17,7 +17,7 @@ This crate simply <del>plagiarized</del> <ins>extracted</ins> all the relevant f
 Error: Got a 'middle' error
 
 Caused by:
-    1: A nested error occured
+    1: A nested error occurred
     2: 'inner' failed
     3: Caught an error: Not implemented, yet.
 ```
